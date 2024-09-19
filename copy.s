@@ -84,45 +84,25 @@ s_waitcnt lgkmcnt(0)
 # s_mul_i32 s[sgprTmp], s[sgprWorkGroup0], s[sgprTmp]
 
 /* init_param */
-s_mov_b32  s[sgprSrc+0], s[sgprAddressIn+0]
-s_mov_b32  s[sgprSrc+1], s[sgprAddressIn+1]
-s_lshl_b32 s[sgprSrc+2], s[sgprSizeLength], 1
-s_mov_b32  s[sgprSrc+3], Srd127_96
+s_mov_b32 s[sgprSrc+0], s[sgprAddressIn+0]
+s_mov_b32 s[sgprSrc+1], s[sgprAddressIn+1]
+s_mov_b32 s[sgprSrc+2], s[sgprSizeLength]
+s_mov_b32 s[sgprSrc+3], Srd127_96
 
-s_mov_b32  s[sgprDst+0], s[sgprAddressOut+0]
-s_mov_b32  s[sgprDst+1], s[sgprAddressOut+1]
-s_lshl_b32 s[sgprDst+2], s[sgprSizeLength], 1
-s_mov_b32  s[sgprDst+3], Srd127_96
+s_mov_b32 s[sgprDst+0], s[sgprAddressOut+0]
+s_mov_b32 s[sgprDst+1], s[sgprAddressOut+1]
+s_mov_b32 s[sgprDst+2], s[sgprSizeLength]
+s_mov_b32 s[sgprDst+3], Srd127_96
 
-v_lshlrev_b32 v[vgprOffset], 2, v[vgprSerial]
+v_lshlrev_b32 v[vgprOffset], 0, v[vgprSerial]
 
-v_mov_b32 v[vgprValue], 2
-v_cvt_f32_u32 v[vgprValue], v[vgprValue]
-s_nop 1
-v_cvt_f16_f32 v[vgprValue], v[vgprValue]
-s_nop 1
-s_mov_b32 s[sgprTmp], 0x0000ffff
-v_and_b32 v[vgprValue], v[vgprValue], s[sgprTmp]
-v_lshlrev_b32 v[vgprTmp], 16, v[vgprValue]
-v_or_b32 v[vgprValue], v[vgprValue], v[vgprTmp]
+buffer_load_ubyte v[vgprValue], v[vgprOffset], s[sgprSrc:sgprSrc+3], 0 offen offset:0
+s_waitcnt vmcnt(0)
 
-ds_write_b32 v[vgprOffset], v[vgprValue]
-s_waitcnt lgkmcnt(0)
+break:
 
-v_mov_b32 v[vgprValue], 1
-v_cvt_f32_u32 v[vgprValue], v[vgprValue]
-s_nop 1
-v_cvt_f16_f32 v[vgprValue], v[vgprValue]
-s_nop 1
-s_mov_b32 s[sgprTmp], 0x0000ffff
-v_and_b32 v[vgprValue], v[vgprValue], s[sgprTmp]
-v_lshlrev_b32 v[vgprTmp], 16, v[vgprValue]
-v_or_b32 v[vgprValue], v[vgprValue], v[vgprTmp]
-
-ds_read_u16_d16_hi v[vgprValue], v[vgprOffset]
-s_waitcnt lgkmcnt(0)
-
-buffer_store_dword v[vgprValue], v[vgprOffset], s[sgprDst:sgprDst+3], 0 offen offset:0
+buffer_store_byte v[vgprValue], v[vgprOffset], s[sgprDst:sgprDst+3], 0 offen offset:0
+s_waitcnt vmcnt(0)
 
 s_endpgm
 .LCopy_end:

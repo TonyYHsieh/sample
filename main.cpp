@@ -2,6 +2,7 @@
 #include <hip/device_functions.h>
 #include <hip/hip_ext.h>
 #include <hip/math_functions.h>
+#include <hip/hip_fp8.h>
 #include <algorithm>
 #include <cassert>
 #include <chrono>
@@ -12,7 +13,7 @@
 #include <cstdint>
 #include <cstring>
 #include "KernelArguments.hpp"
-
+#include "cblas.h"
 
 template<typename Ti, typename To>
 hipError_t launchASMCopy(hipFunction_t func, To *out, Ti* in, std::uint32_t length) {
@@ -37,7 +38,7 @@ hipError_t launchASMCopy(hipFunction_t func, To *out, Ti* in, std::uint32_t leng
     hipStream_t stream{};
     auto err = hipStreamCreate(&stream);
 
-    err = hipExtModuleLaunchKernel(func, 256 * workgroups, 1, 1, 256, 1, 1, 1000 * sizeof(float), nullptr, nullptr, launchArgs);
+    err = hipExtModuleLaunchKernel(func, 64 * workgroups, 1, 1, 64, 1, 1, 1000 * sizeof(float), nullptr, nullptr, launchArgs);
 
     err = hipStreamSynchronize(stream);
 
@@ -57,7 +58,6 @@ hipError_t prepareASMKernel(const std::string &funcName, const std::string &coPa
     return err;
 }
 
-
 template <typename T>
 void Sample(const std::string& coPath, const std::uint32_t& length)
 {
@@ -72,13 +72,17 @@ void Sample(const std::string& coPath, const std::uint32_t& length)
 
     std::memcpy(cpuRef.data(), cpuInput.data(), cpuInput.size() * sizeof(T));
 
+    for (std::size_t i = 0; i < length; ++i) {
+        std::cout << "Tony Ref " << float(cpuInput[i]) << std::endl;
+    }
+
     T *gpuOutput{};
     err = hipMalloc(&gpuOutput, sizeof(T) * length);
     err = hipMemset(gpuOutput, 0, sizeof(T) * length);
 
     T *gpuInput{};
     err = hipMalloc(&gpuInput, sizeof(T) * length);
-    err = hipMemcpyHtoD(gpuInput, cpuInput.data(), cpuInput.size() * sizeof(T));
+    err = hipMemcpyHtoD(gpuInput, cpuInput.data(), sizeof(T) * length);
 
     hipModule_t module{};
     hipFunction_t func{};
@@ -112,7 +116,9 @@ int main(int argc, char **argv) {
 
     const std::uint32_t length(std::atoi(argv[1]));
 
-    Sample<_Float16>("copy.co", length);
+    Sample<__hip_fp8_e4m3_fnuz>("copy.co", length);
+
+    std::cout << "Tony sizeof __hip_fp8_e4m3_fnuz " << sizeof(__hip_fp8_e4m3_fnuz) << std::endl;
 
     return 0;
 }
