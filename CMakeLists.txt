@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(copy)
+project(matmul)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 add_definitions(-D__HIP__)
@@ -9,5 +9,5 @@ target_link_libraries(${PROJECT_NAME} hip::device)
 include(asm.cmake)
 add_custom_target(asm_copy_target)
 add_dependencies(${PROJECT_NAME} asm_copy_target)
-build_asm(copy asm_copy_target)
+build_asm(matmul asm_copy_target)
 
